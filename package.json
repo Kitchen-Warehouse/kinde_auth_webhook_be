@@ -1,0 +1,38 @@
+{
+  "name": "my-webhook-project",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "./src/edge-functions/create-user.ts",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "extensions:watch": "tsup --env.NODE_ENV dev",
+    "build": "tsup",
+    "start": "netlify dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@commercetools/sdk-types": "^1.0.0",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.13.10",
+    "@types/node-fetch": "^2.6.12",
+    "esbuild": "^0.25.1",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@commercetools/platform-sdk": "^8.5.0",
+    "@commercetools/sdk-auth": "^5.0.0",
+    "@commercetools/sdk-client-v2": "^3.0.0",
+    "@commercetools/sdk-middleware-http": "^8.0.0",
+    "@netlify/edge-functions": "^2.11.1",
+    "axios": "^1.8.4",
+    "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}

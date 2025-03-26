@@ -1,0 +1,11 @@
+[build]
+  publish = "public"         # or your chosen publish directory
+  command = "npm run build"    # adjust if you have a build command
+
+[functions]
+  directory = "dist/functions" 
+  
+[[edge_functions]]
+  path = "/create-user"            # the URL path to trigger your function
+  function = "create-user"         # the name of your function file (without .js)
+

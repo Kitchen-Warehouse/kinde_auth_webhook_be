@@ -26,8 +26,8 @@ Ensure you have the following installed:
 
 1. **Clone the Repository:**
    ```sh
-   git clone https://github.com/your-username/your-repo.git
-   cd your-repo
+   git clone https://github.com/Kitchen-Warehouse/kinde_auth_webhook_be.git
+   cd kinde_auth_webhook_be
    ```
 2. **Install Dependencies:**
    ```sh

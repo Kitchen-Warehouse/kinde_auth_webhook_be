@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "lib": [
+      "es2020",
+      "webworker"
+    ],
+    "outDir": "netlify/edge-functions",
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./",
+    "baseUrl": "./",
+    "paths": {
+      "@customers/*": [
+        "src/customerController/*"
+      ],
+      "@ctController/*": [
+        "src/commmercetoolsClient/*"
+      ],
+      "@projectTypes/*": [
+        "src/types/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ]
+    },
+    "allowJs": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
