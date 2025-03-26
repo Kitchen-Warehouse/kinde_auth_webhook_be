@@ -88,4 +88,4 @@ netlify deploy --prod
 
 ## License
 
-This project is licensed under the MIT License.# kinde_auth_webhook_be
+This project is licensed under the MIT License. #kinde_auth_webhook_be
