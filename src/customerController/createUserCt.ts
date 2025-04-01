@@ -5,61 +5,57 @@ import { AccountRegisterBody, KindePayload } from "@projectTypes/index";
 
 export const createUserCt = async (kindeToken: string) => {
   try {
-    const kindePayload: any = jwtDecode(kindeToken);
-        if (kindePayload?.type === "user.created"){
-            const customerPayloadByKinde = await getCustomerPayloadByToken(kindePayload);
-      const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
-      const accessToken = await getAccesstoken();
-      const adminClient = await getClient();
+    const kindePayload: KindePayload = jwtDecode(kindeToken);
+    const customerPayloadByKinde = await getCustomerPayloadByToken(kindePayload);
+    const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
+    const accessToken = await getAccesstoken();
+    const adminClient = await getClient();
 
-            const customer = await adminClient.customers()
-        .post({
-          body: ctPayload,
-        })
-        .execute()
-        .then((response) => {
-          return response;
-        })
-        .catch((error) => {
-          if (error.code && error.code === 400) {
-                        if (error.body && error.body?.errors?.[0]?.code === 'DuplicateField') {
-                            throw new Error(`The account ${ctPayload.email} does already exist.`);
-            }
+    const customer = await adminClient.customers()
+      .post({
+        body: ctPayload,
+      })
+      .execute()
+      .then((response) => {
+        return response;
+      })
+      .catch((error) => {
+        if (error.code && error.code === 400) {
+          if (error.body && error.body?.errors?.[0]?.code === 'DuplicateField') {
+            throw new Error(`The account ${ctPayload.email} does already exist.`);
           }
-          throw error;
-        });
-      await updateKindePropertyValue({
-        userId: kindePayload.data.user.id,
-        kindeAccessToken: accessToken.access_token,
-        customerId: customer.body.customer.id,
+        }
+        throw error;
       });
-      return {
-        statusCode: customer.statusCode,
-        body: customer.body,
-      };
-    } else {
-            return {}
-    }
+    const kindeResponse = await updateKindePropertyValue({
+      userId: kindePayload?.data?.user?.id as string ?? '',
+      kindeAccessToken: accessToken?.access_token ?? '',
+      customerId: customer?.body?.customer?.id ?? '',
+    });
+    return {
+      statusCode: customer?.statusCode,
+      body: { ct: customer?.body, kinde: kindeResponse },
+    };
   } catch (err) {
     return {
       statusCode: 500,
-            body: err
-  }
+      body: err
     }
+  }
 }
 
 const getCustomerPayloadByToken = async (kindePayload: KindePayload) => {
   try {
     const password = generatePassword(12);
     const data = kindePayload?.data?.user;
-        const orgId = Deno.env.get("KWH_STG_ORG_ID");
+    const orgId = Deno.env.get("KWH_STG_ORG_ID");
 
     const customerPayload = {
       email: data?.email, //`satya${Date.now()}@gmail.com`
       firstName: data?.first_name,
       password: password,
       lastName: data?.last_name,
-            organizationName: data?.organizations?.filter((org: any) => org.code === orgId)?.[0]?.code,
+      organizationName: data?.organizations?.filter((org: any) => org.code === orgId)?.[0]?.code,
       phone: data?.phone,
       username: data?.username,
     }
@@ -67,14 +63,14 @@ const getCustomerPayloadByToken = async (kindePayload: KindePayload) => {
   } catch (err) {
     return {
       statusCode: 500,
-            message: "Something went wrong while getting the customer payload",
-  }
+      message: "Something went wrong while getting the customer payload",
     }
+  }
 }
 
 const generatePassword = (length: number): string => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-    let password = "";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+  let password = "";
   for (let i = 0; i < length; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -104,10 +100,12 @@ export const getAccesstoken = async () => {
 
     return responseData;
   } catch (err) {
-    console.log(err);
+    return {
+      statusCode: 500,
+      message: "Something went wrong while getting the access token",
+    }
   }
 };
-
 export const updateKindePropertyValue = async ({
   userId,
   kindeAccessToken,
@@ -135,6 +133,9 @@ export const updateKindePropertyValue = async ({
     const responseData = await response.json();
     return responseData;
   } catch (err) {
-    console.log(err);
+    return {
+      statusCode: 500,
+      message: "Something went wrong while updating the kinde property value",
+    }
   }
 };
