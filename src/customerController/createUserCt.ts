@@ -2,6 +2,7 @@ import { jwtDecode } from "jwt-decode";
 import { getClient } from "@ctController/index";
 import { prepareCTPayload } from "@utils/customerCreateMapper";
 import { AccountRegisterBody, KindePayload } from "@projectTypes/index";
+import { ByProjectKeyRequestBuilder, Customer, CustomerUpdate, CustomerUpdateAction } from "@commercetools/platform-sdk";
 
 export const createUserCt = async (kindeToken: string) => {
   try {
@@ -11,31 +12,58 @@ export const createUserCt = async (kindeToken: string) => {
     const accessToken = await getAccesstoken();
     const adminClient = await getClient();
 
-    const customer = await adminClient.customers()
-      .post({
-        body: ctPayload,
-      })
-      .execute()
-      .then((response) => {
-        return response;
-      })
-      .catch((error) => {
-        if (error.code && error.code === 400) {
-          if (error.body && error.body?.errors?.[0]?.code === 'DuplicateField') {
-            throw new Error(`The account ${ctPayload.email} does already exist.`);
-          }
-        }
-        throw error;
+    const userExist = await isUserExist(adminClient, ctPayload?.email) as Customer;
+    let kindeResponse;
+    if (userExist) {
+      const updateActions: CustomerUpdateAction[] = [];
+      kindeResponse = await updateKindePropertyValue({
+        userId: kindePayload?.data?.user?.id as string ?? '',
+        kindeAccessToken: accessToken?.access_token ?? '',
+        customerId: userExist?.id ?? '',
       });
-    const kindeResponse = await updateKindePropertyValue({
-      userId: kindePayload?.data?.user?.id as string ?? '',
-      kindeAccessToken: accessToken?.access_token ?? '',
-      customerId: customer?.body?.customer?.id ?? '',
-    });
-    return {
-      statusCode: customer?.statusCode,
-      body: { ct: customer?.body, kinde: kindeResponse },
-    };
+      updateActions.push({
+        action: "setCustomField",
+        name: "siteKey",
+        value: ctPayload?.custom?.fields?.siteKey ?? '',
+      });
+      adminClient.customers().withId({ID: userExist?.id}).post({
+        body: {
+          version: userExist?.version,
+          actions: updateActions,
+        }
+      }).execute();
+      return {
+        statusCode: kindeResponse?.statusCode,
+        body: { ct: userExist, kinde: kindeResponse },
+      };
+    } else {
+      const customer = await adminClient.customers()
+        .post({
+          body: ctPayload,
+        })
+        .execute()
+        .then((response) => {
+          return response;
+        })
+        .catch((error) => {
+          if (error.code && error.code === 400) {
+            if (error.body && error.body?.errors?.[0]?.code === 'DuplicateField') {
+              throw new Error(`The account ${ctPayload.email} does already exist.`);
+            }
+          }
+          throw error;
+        });
+      kindeResponse = await updateKindePropertyValue({
+        userId: kindePayload?.data?.user?.id as string ?? '',
+        kindeAccessToken: accessToken?.access_token ?? '',
+        customerId: customer?.body?.customer?.id ?? '',
+      });
+      return {
+        statusCode: customer?.statusCode,
+        body: { ct: customer?.body, kinde: kindeResponse },
+      };
+    }
+
   } catch (err) {
     return {
       statusCode: 500,
@@ -138,4 +166,21 @@ export const updateKindePropertyValue = async ({
       message: "Something went wrong while updating the kinde property value",
     }
   }
+};
+
+export const isUserExist = async (adminClient: ByProjectKeyRequestBuilder, email: string) => {
+  try {
+    const data = await adminClient
+      .customers().get({
+        queryArgs: { where: `lowercaseEmail="${email.toLowerCase()}"` }
+      })
+      .execute();
+    return data?.body?.results[0] ?? {} as Customer;
+  } catch (err: any) {
+    return {
+      statusCode: err.statusCode,
+      body: JSON.stringify({ 'Message': err.message, data: err })
+    };
+  }
+
 };
