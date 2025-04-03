@@ -2,7 +2,7 @@ import { jwtDecode } from "jwt-decode";
 import { getClient } from "@ctController/index";
 import { prepareCTPayload } from "@utils/customerCreateMapper";
 import { AccountRegisterBody, KindePayload } from "@projectTypes/index";
-import { ByProjectKeyRequestBuilder, Customer, CustomerUpdate, CustomerUpdateAction } from "@commercetools/platform-sdk";
+import { ByProjectKeyRequestBuilder, Customer, CustomerUpdateAction } from "@commercetools/platform-sdk";
 
 export const createUserCt = async (kindeToken: string) => {
   try {
@@ -13,8 +13,10 @@ export const createUserCt = async (kindeToken: string) => {
     const adminClient = await getClient();
 
     const userExist = await isUserExist(adminClient, ctPayload?.email) as Customer;
+    console.log("EXIST", userExist)
     let kindeResponse;
     if (userExist) {
+      console.log("IF")
       const updateActions: CustomerUpdateAction[] = [];
       kindeResponse = await updateKindePropertyValue({
         userId: kindePayload?.data?.user?.id as string ?? '',
@@ -37,6 +39,7 @@ export const createUserCt = async (kindeToken: string) => {
         body: { ct: userExist, kinde: kindeResponse },
       };
     } else {
+      console.log("ELSE")
       const customer = await adminClient.customers()
         .post({
           body: ctPayload,
