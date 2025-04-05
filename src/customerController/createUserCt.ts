@@ -19,7 +19,7 @@ export const createUserCt = async (kindePayload: KindePayload) => {
     const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
     console.log("EXIST", userExist)
     let kindeResponse;
-    if (userExist) {
+    if (userExist && Object.keys(userExist).length > 0) {
       const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields);
 
       console.log("IF")
