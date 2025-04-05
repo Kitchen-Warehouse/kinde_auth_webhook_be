@@ -1,6 +1,6 @@
 import { getClient } from "@ctController/index";
 import { prepareCTPayload } from "@utils/customerCreateMapper";
-import { AccountRegisterBody, KindePayload } from "@projectTypes/index";
+import { AccountRegisterBody, KindeOrganization, KindePayload, KindeUser } from "@projectTypes/index";
 import { ByProjectKeyRequestBuilder, Customer, CustomerUpdateAction } from "@commercetools/platform-sdk";
 
 const orgEnvMap = {
@@ -12,8 +12,17 @@ const orgEnvMap = {
 
 export const createUserCt = async (kindePayload: KindePayload) => {
   try {
-    const customerPayloadByKinde = await getCustomerPayloadByToken(kindePayload) as AccountRegisterBody;
-    const accessToken = await getAccesstoken();
+    const data = kindePayload?.data?.user as KindeUser;
+    const matchedOrg = data?.organizations?.find((org: any) =>
+      Object.values(orgEnvMap).includes(org.code)
+    ) as KindeOrganization;
+    const matchedEnvVarName = Object?.keys(orgEnvMap)?.find(
+      key => orgEnvMap[key] === matchedOrg?.code
+    ) as string;
+    const customerPayloadByKinde = await getCustomerPayloadByToken(data, matchedOrg, matchedEnvVarName) as AccountRegisterBody;
+    const isKwh = matchedEnvVarName?.includes("KWH");
+    console.log("IS_KWH", isKwh)
+    const accessToken = await getAccesstoken(isKwh);
     const adminClient = await getClient();
     console.log("PAYLOAD", customerPayloadByKinde)
     const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
@@ -28,13 +37,19 @@ export const createUserCt = async (kindePayload: KindePayload) => {
         userId: kindePayload?.data?.user?.id as string ?? '',
         kindeAccessToken: accessToken?.access_token ?? '',
         customerId: userExist?.id ?? '',
+        isKwh
       });
+      const rawSiteKey = ctPayload?.custom?.fields?.siteKey ?? [];
+
+      const cleanSiteKey = Array.isArray(rawSiteKey)
+        ? [...new Set(rawSiteKey.map(key => key?.trim())?.filter(key => key))]
+        : [];
       updateActions.push({
         action: "setCustomField",
         name: "siteKey",
-        value: ctPayload?.custom?.fields?.siteKey ?? '',
+        value: cleanSiteKey ?? '',
       });
-      adminClient.customers().withId({ID: userExist?.id}).post({
+      adminClient.customers().withId({ ID: userExist?.id }).post({
         body: {
           version: userExist?.version,
           actions: updateActions,
@@ -68,6 +83,7 @@ export const createUserCt = async (kindePayload: KindePayload) => {
         userId: kindePayload?.data?.user?.id as string ?? '',
         kindeAccessToken: accessToken?.access_token ?? '',
         customerId: customer?.body?.customer?.id ?? '',
+        isKwh
       });
       return {
         statusCode: customer?.statusCode,
@@ -83,22 +99,11 @@ export const createUserCt = async (kindePayload: KindePayload) => {
   }
 }
 
-const getCustomerPayloadByToken = async (kindePayload: KindePayload) => {
+const getCustomerPayloadByToken = async (data: KindeUser, matchedOrg: KindeOrganization, matchedEnvVarName: string ) => {
   try {
     const password = generatePassword(12);
-    const data = kindePayload?.data?.user;
     const KWH_SITE_KEY = Deno.env.get("KWH_SITE_KEY");
     const KWSS_SITE_KEY = Deno.env.get("KWSS_SITE_KEY");
-    // Find matching org from user's organizations
-    const matchedOrg = data?.organizations?.find((org: any) =>
-      Object.values(orgEnvMap).includes(org.code)
-    );
-
-    // Get the env var name (like "KWH_STG_ORG_ID") that matches the org code
-    const matchedEnvVarName = Object.keys(orgEnvMap).find(
-      key => orgEnvMap[key] === matchedOrg?.code
-    );
-
     const siteKey = matchedEnvVarName?.includes("KWH") ? KWH_SITE_KEY : KWSS_SITE_KEY;
 
     const customerPayload = {
@@ -129,12 +134,20 @@ const generatePassword = (length: number): string => {
   return password;
 }
 
-export const getAccesstoken = async () => {
+export const getAccesstoken = async (isKwh: boolean) => {
   try {
-    const url = Deno.env.get('KINDE_URL');
-    const client_id = Deno.env.get('KINDE_CLIENT_ID');
-    const client_secret = Deno.env.get('KINDE_CLIENT_SECRET');
-    const audience = Deno.env.get('KINDE_AUDIENCE_URL');
+    let url, client_id, client_secret, audience;
+    if (isKwh) {
+      url = Deno.env.get('KWH_STG_KINDE_URL');
+      client_id = Deno.env.get('KWH_STG_KINDE_CLIENT_ID');
+      client_secret = Deno.env.get('KWH_STG_KINDE_CLIENT_SECRET');
+      audience = Deno.env.get('KWH_STG_KINDE_AUDIENCE_URL');
+    } else {
+      url = Deno.env.get('KWSS_STG_KINDE_URL');
+      client_id = Deno.env.get('KWSS_STG_KINDE_CLIENT_ID');
+      client_secret = Deno.env.get('KWSS_STG_KINDE_CLIENT_SECRET');
+      audience = Deno.env.get('KWSS_STG_KINDE_AUDIENCE_URL');
+    }
     const body = new URLSearchParams();
     body.append('grant_type', 'client_credentials');
     body.append('client_id', client_id as string);
@@ -162,13 +175,20 @@ export const updateKindePropertyValue = async ({
   userId,
   kindeAccessToken,
   customerId,
+  isKwh,
 }: {
   userId: string;
   kindeAccessToken: string;
   customerId: string;
+  isKwh: boolean;
 }) => {
   try {
-    const url = Deno.env.get('KINDE_URL');
+    let url;
+    if (isKwh) {
+      url = Deno.env.get('KWH_STG_KINDE_URL');
+    } else {
+      url = Deno.env.get('KWSS_STG_KINDE_URL');
+    }
 
     const response = await fetch(`${url}/api/v1/users/${userId}/properties`, {
       method: 'PATCH',

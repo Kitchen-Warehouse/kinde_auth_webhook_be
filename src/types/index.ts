@@ -1,16 +1,6 @@
 export interface KindePayload {
     data?: {
-        user?: {
-            email?: string;
-            first_name?: string;
-            id?: string;
-            is_password_reset_requested?: boolean;
-            is_suspended?: boolean;
-            last_name?: string;
-            organizations?: KindeOrganization[];
-            phone?: string;
-            username?: string;
-        };
+        user?: KindeUser;
     };
     event_id?: string;
     event_timestamp?: string;
@@ -19,7 +9,19 @@ export interface KindePayload {
     type?: string;
 }
 
-interface KindeOrganization {
+export interface KindeUser {
+    email?: string;
+    first_name?: string;
+    id?: string;
+    is_password_reset_requested?: boolean;
+    is_suspended?: boolean;
+    last_name?: string;
+    organizations?: KindeOrganization[];
+    phone?: string;
+    username?: string;
+}
+
+export interface KindeOrganization {
     code?: string;
     permissions?: string[];
     roles?: string[];
