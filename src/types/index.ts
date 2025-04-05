@@ -34,7 +34,8 @@ export interface AccountRegisterBody {
     dateOfBirth?: string;
     storeKey?: string;
     isSubscribed?: boolean;
-    organizationName?: string;
+    orgCode?: string;
+    siteKey?: string;
 }
 
 // Add more as required for versatility of Api

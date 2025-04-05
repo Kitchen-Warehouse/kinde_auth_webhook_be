@@ -1,14 +1,16 @@
 import { CustomerDraft } from "@commercetools/platform-sdk";
+import { AccountRegisterBody } from "@projectTypes/index";
 
-export const prepareCTPayload = (customerData: any, customFields: any): CustomerDraft => {
-    const accountRegisterBody = customerData || {};
+export const prepareCTPayload = (customerData: AccountRegisterBody, customFields: any): CustomerDraft => {
+    const accountRegisterBody = customerData || {} ;
     const customFieldsData = customFields ? { ...customFields, "phone": undefined } : {
         phone: undefined
     }
     const firstName = accountRegisterBody?.firstName
     const lastName = accountRegisterBody?.lastName;
-    const organizationName = accountRegisterBody?.organizationName;
-    const siteKey = Deno.env.get("KWH_SITE_KEY") ?? 'kitchenwarehouse';
+    const organizationName = accountRegisterBody?.orgCode;
+    const currentSiteKey = accountRegisterBody?.siteKey;
+
     const customer = {
         email: accountRegisterBody?.email,
         password: accountRegisterBody?.password,
@@ -24,7 +26,7 @@ export const prepareCTPayload = (customerData: any, customFields: any): Customer
                 typeId: "type"
             }, fields: {
                 ...customFieldsData,
-                "siteKey": [`${organizationName}|${siteKey}`],
+                "siteKey": [...customFieldsData.siteKey || '', `${organizationName}|${currentSiteKey}`],
             }
         }
     };

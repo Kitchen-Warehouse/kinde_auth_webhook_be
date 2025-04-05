@@ -1,21 +1,27 @@
-import { jwtDecode } from "jwt-decode";
 import { getClient } from "@ctController/index";
 import { prepareCTPayload } from "@utils/customerCreateMapper";
 import { AccountRegisterBody, KindePayload } from "@projectTypes/index";
 import { ByProjectKeyRequestBuilder, Customer, CustomerUpdateAction } from "@commercetools/platform-sdk";
 
-export const createUserCt = async (kindeToken: string) => {
+const orgEnvMap = {
+  KWH_STG_ORG_ID: Deno.env.get("KWH_STG_ORG_ID"),
+  KWSS_STG_ORG_ID: Deno.env.get("KWSS_STG_ORG_ID"),
+  KWH_PROD_ORG_ID: Deno.env.get("KWH_PROD_ORG_ID"),
+  KWSS_PROD_ORG_ID: Deno.env.get("KWSS_PROD_ORG_ID"),
+} as { [key: string]: string };
+
+export const createUserCt = async (kindePayload: KindePayload) => {
   try {
-    const kindePayload: KindePayload = jwtDecode(kindeToken);
-    const customerPayloadByKinde = await getCustomerPayloadByToken(kindePayload);
-    const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
+    const customerPayloadByKinde = await getCustomerPayloadByToken(kindePayload) as AccountRegisterBody;
     const accessToken = await getAccesstoken();
     const adminClient = await getClient();
-
-    const userExist = await isUserExist(adminClient, ctPayload?.email) as Customer;
+    console.log("PAYLOAD", customerPayloadByKinde)
+    const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
     console.log("EXIST", userExist)
     let kindeResponse;
     if (userExist) {
+      const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields);
+
       console.log("IF")
       const updateActions: CustomerUpdateAction[] = [];
       kindeResponse = await updateKindePropertyValue({
@@ -39,6 +45,8 @@ export const createUserCt = async (kindeToken: string) => {
         body: { ct: userExist, kinde: kindeResponse },
       };
     } else {
+      const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
+
       console.log("ELSE")
       const customer = await adminClient.customers()
         .post({
@@ -79,16 +87,29 @@ const getCustomerPayloadByToken = async (kindePayload: KindePayload) => {
   try {
     const password = generatePassword(12);
     const data = kindePayload?.data?.user;
-    const orgId = Deno.env.get("KWH_STG_ORG_ID");
+    const KWH_SITE_KEY = Deno.env.get("KWH_SITE_KEY");
+    const KWSS_SITE_KEY = Deno.env.get("KWSS_SITE_KEY");
+    // Find matching org from user's organizations
+    const matchedOrg = data?.organizations?.find((org: any) =>
+      Object.values(orgEnvMap).includes(org.code)
+    );
+
+    // Get the env var name (like "KWH_STG_ORG_ID") that matches the org code
+    const matchedEnvVarName = Object.keys(orgEnvMap).find(
+      key => orgEnvMap[key] === matchedOrg?.code
+    );
+
+    const siteKey = matchedEnvVarName?.includes("KWH") ? KWH_SITE_KEY : KWSS_SITE_KEY;
 
     const customerPayload = {
       email: data?.email, //`satya${Date.now()}@gmail.com`
       firstName: data?.first_name,
       password: password,
       lastName: data?.last_name,
-      organizationName: data?.organizations?.filter((org: any) => org.code === orgId)?.[0]?.code,
+      orgCode: matchedOrg?.code,
       phone: data?.phone,
       username: data?.username,
+      siteKey: siteKey,
     }
     return customerPayload as AccountRegisterBody;
   } catch (err) {
