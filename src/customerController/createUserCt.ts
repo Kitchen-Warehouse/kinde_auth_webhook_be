@@ -22,7 +22,7 @@ export const createUserCt = async (kindePayload: KindePayload) => {
     const customerPayloadByKinde = await getCustomerPayloadByToken(data, matchedOrg, matchedEnvVarName) as AccountRegisterBody;
 
     const env = getSiteForEnv(matchedEnvVarName);
-    const accessToken = await getAccesstoken(env);
+    const accessToken = await getAccessToken(env);
     const adminClient = await getClient();
 
     const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
@@ -150,7 +150,7 @@ const generatePassword = (length: number): string => {
   return password;
 }
 
-export const getAccesstoken = async (env: string) => {
+export const getAccessToken = async (env: string) => {
   try {
     
     const url = Deno.env.get(`${env}_KINDE_URL`);
