@@ -4,10 +4,8 @@ import { AccountRegisterBody, KindeOrganization, KindePayload, KindeUser } from 
 import { ByProjectKeyRequestBuilder, Customer, CustomerUpdateAction } from "@commercetools/platform-sdk";
 
 const orgEnvMap = {
-  KWH_STG_ORG_ID: Deno.env.get("KWH_STG_ORG_ID"),
-  KWSS_STG_ORG_ID: Deno.env.get("KWSS_STG_ORG_ID"),
-  KWH_PROD_ORG_ID: Deno.env.get("KWH_PROD_ORG_ID"),
-  KWSS_PROD_ORG_ID: Deno.env.get("KWSS_PROD_ORG_ID"),
+  KWH_ORG_ID: Deno.env.get("KWH_ORG_ID"),
+  KWSS_ORG_ID: Deno.env.get("KWSS_ORG_ID"),
 } as { [key: string]: string };
 
 export const createUserCt = async (kindePayload: KindePayload) => {
@@ -133,15 +131,15 @@ export const getAccesstoken = async (isKwh: boolean) => {
   try {
     let url, client_id, client_secret, audience;
     if (isKwh) {
-      url = Deno.env.get('KWH_STG_KINDE_URL');
-      client_id = Deno.env.get('KWH_STG_KINDE_CLIENT_ID');
-      client_secret = Deno.env.get('KWH_STG_KINDE_CLIENT_SECRET');
-      audience = Deno.env.get('KWH_STG_KINDE_AUDIENCE_URL');
+      url = Deno.env.get('KWH_KINDE_URL');
+      client_id = Deno.env.get('KWH_KINDE_CLIENT_ID');
+      client_secret = Deno.env.get('KWH_KINDE_CLIENT_SECRET');
+      audience = Deno.env.get('KWH_KINDE_AUDIENCE_URL');
     } else {
-      url = Deno.env.get('KWSS_STG_KINDE_URL');
-      client_id = Deno.env.get('KWSS_STG_KINDE_CLIENT_ID');
-      client_secret = Deno.env.get('KWSS_STG_KINDE_CLIENT_SECRET');
-      audience = Deno.env.get('KWSS_STG_KINDE_AUDIENCE_URL');
+      url = Deno.env.get('KWSS_KINDE_URL');
+      client_id = Deno.env.get('KWSS_KINDE_CLIENT_ID');
+      client_secret = Deno.env.get('KWSS_KINDE_CLIENT_SECRET');
+      audience = Deno.env.get('KWSS_KINDE_AUDIENCE_URL');
     }
     const body = new URLSearchParams();
     body.append('grant_type', 'client_credentials');
@@ -180,9 +178,9 @@ export const updateKindePropertyValue = async ({
   try {
     let url;
     if (isKwh) {
-      url = Deno.env.get('KWH_STG_KINDE_URL');
+      url = Deno.env.get('KWH_KINDE_URL');
     } else {
-      url = Deno.env.get('KWSS_STG_KINDE_URL');
+      url = Deno.env.get('KWSS_KINDE_URL');
     }
 
     const response = await fetch(`${url}/api/v1/users/${userId}/properties`, {

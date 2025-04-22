@@ -7,7 +7,7 @@ export default async (request: Request, context: any): Promise<Response> => {
     try {
         const payload = await request.text();
         const kindePayload: KindePayload = jwtDecode(payload);
-        console.log("JWT", kindePayload);
+
         if (kindePayload?.type === "user.created") {
             const customer = await createUserCt(kindePayload) || {};
 

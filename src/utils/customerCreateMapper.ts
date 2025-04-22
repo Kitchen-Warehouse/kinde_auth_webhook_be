@@ -26,7 +26,7 @@ export const prepareCTPayload = (customerData: AccountRegisterBody, customFields
                 typeId: "type"
             }, fields: {
                 ...customFieldsData,
-                "siteKey": [...customFieldsData.siteKey || '', `${organizationName}|${currentSiteKey}`],
+                "siteKey": [...customFieldsData.siteKey ?? '', `${organizationName}|${currentSiteKey}`],
             }
         }
     };
