@@ -21,17 +21,13 @@ export const createUserCt = async (kindePayload: KindePayload) => {
     ) as string;
     const customerPayloadByKinde = await getCustomerPayloadByToken(data, matchedOrg, matchedEnvVarName) as AccountRegisterBody;
     const isKwh = matchedEnvVarName?.includes("KWH");
-    console.log("IS_KWH", isKwh)
     const accessToken = await getAccesstoken(isKwh);
     const adminClient = await getClient();
-    console.log("PAYLOAD", customerPayloadByKinde)
     const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
-    console.log("EXIST", userExist)
     let kindeResponse;
     if (userExist && Object.keys(userExist).length > 0) {
       const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields);
 
-      console.log("IF")
       const updateActions: CustomerUpdateAction[] = [];
       kindeResponse = await updateKindePropertyValue({
         userId: kindePayload?.data?.user?.id as string ?? '',
@@ -62,7 +58,6 @@ export const createUserCt = async (kindePayload: KindePayload) => {
     } else {
       const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
 
-      console.log("ELSE")
       const customer = await adminClient.customers()
         .post({
           body: ctPayload,
@@ -120,7 +115,7 @@ const getCustomerPayloadByToken = async (data: KindeUser, matchedOrg: KindeOrgan
   } catch (err) {
     return {
       statusCode: 500,
-      message: "Something went wrong while getting the customer payload",
+      message: "Something went wrong while getting the customer payload", err,
     }
   }
 }
@@ -167,7 +162,7 @@ export const getAccesstoken = async (isKwh: boolean) => {
   } catch (err) {
     return {
       statusCode: 500,
-      message: "Something went wrong while getting the access token",
+      message: "Something went wrong while getting the access token", err,
     }
   }
 };
@@ -207,7 +202,7 @@ export const updateKindePropertyValue = async ({
   } catch (err) {
     return {
       statusCode: 500,
-      message: "Something went wrong while updating the kinde property value",
+      message: "Something went wrong while updating the kinde property value", err,
     }
   }
 };
