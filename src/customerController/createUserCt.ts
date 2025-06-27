@@ -21,10 +21,10 @@ export const createUserCt = async (kindePayload: KindePayload) => {
     const isKwh = matchedEnvVarName?.includes("KWH");
     const accessToken = await getAccesstoken(isKwh);
     const adminClient = await getClient();
-    const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
+    const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string, isKwh) as Customer;
     let kindeResponse;
     if (userExist && Object.keys(userExist).length > 0) {
-      const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields);
+      const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields, userExist?.stores || [], isKwh);
 
       const updateActions: CustomerUpdateAction[] = [];
       kindeResponse = await updateKindePropertyValue({
@@ -54,7 +54,7 @@ export const createUserCt = async (kindePayload: KindePayload) => {
         body: { ct: userExist, kinde: kindeResponse },
       };
     } else {
-      const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
+      const ctPayload = prepareCTPayload(customerPayloadByKinde, {}, [], isKwh);
 
       const customer = await adminClient.customers()
         .post({
@@ -205,9 +205,10 @@ export const updateKindePropertyValue = async ({
   }
 };
 
-export const isUserExist = async (adminClient: ByProjectKeyRequestBuilder, email: string) => {
+export const isUserExist = async (adminClient: ByProjectKeyRequestBuilder, email: string, isKwh: boolean) => {
   try {
-    const data = await adminClient
+    const key = isKwh ? "kwh" : "kwss";
+    const data = await adminClient.inStoreKeyWithStoreKeyValue({ storeKey: key })
       .customers().get({
         queryArgs: { where: `lowercaseEmail="${email.toLowerCase()}"` }
       })

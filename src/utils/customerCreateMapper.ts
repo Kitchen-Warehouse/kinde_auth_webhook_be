@@ -1,7 +1,7 @@
-import { CustomerDraft } from "@commercetools/platform-sdk";
+import { CustomerDraft, StoreResourceIdentifier } from "@commercetools/platform-sdk";
 import { AccountRegisterBody } from "@projectTypes/index";
 
-export const prepareCTPayload = (customerData: AccountRegisterBody, customFields: any): CustomerDraft => {
+export const prepareCTPayload = (customerData: AccountRegisterBody, customFields: any, stores: StoreResourceIdentifier[] = [], isKwh: boolean): CustomerDraft => {
     const accountRegisterBody = customerData || {} ;
     const customFieldsData = customFields ? { ...customFields, "phone": undefined } : {
         phone: undefined
@@ -10,7 +10,15 @@ export const prepareCTPayload = (customerData: AccountRegisterBody, customFields
     const lastName = accountRegisterBody?.lastName;
     const organizationName = accountRegisterBody?.orgCode;
     const currentSiteKey = accountRegisterBody?.siteKey;
-
+    const storesDraft = [...stores,
+    {
+        "typeId": "store",
+        "key": isKwh ? "kwh" : "kwss"
+    }
+    ];
+    const uniqueStores = Array.from(
+        new Map(storesDraft.map(store => [store.key, store])).values()
+    );
     const customer = {
         email: accountRegisterBody?.email,
         password: accountRegisterBody?.password,
@@ -28,7 +36,8 @@ export const prepareCTPayload = (customerData: AccountRegisterBody, customFields
                 ...customFieldsData,
                 "siteKey": [...customFieldsData.siteKey ?? '', `${organizationName}|${currentSiteKey}`],
             }
-        }
+        },
+        stores: uniqueStores
     };
     return customer as CustomerDraft;
 }
