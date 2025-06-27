@@ -39,6 +39,6 @@ export const prepareCTPayload = (customerData: AccountRegisterBody, customFields
         },
         stores: uniqueStores
     };
-    console.log("CUSTOMER", customer);
+
     return customer as CustomerDraft;
 }

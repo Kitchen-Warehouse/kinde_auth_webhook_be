@@ -38,17 +38,18 @@ export const createUserCt = async (kindePayload: KindePayload) => {
       const cleanSiteKey = Array.isArray(rawSiteKey)
         ? [...new Set(rawSiteKey.map(key => key?.trim())?.filter(key => key))]
         : [];
-        console.log("cleanSiteKey", cleanSiteKey);
-      updateActions.push({
+
+        updateActions.push({
         action: "setCustomField",
         name: "siteKey",
-        value: ctPayload?.custom?.fields?.siteKey ?? [],
+          value: cleanSiteKey ?? [],
       });
 
       updateActions.push({
         "action": "setStores",
         "stores": ctPayload?.stores ?? [],
       })
+
       adminClient.customers().withId({ ID: userExist?.id }).post({
         body: {
           version: userExist?.version,
