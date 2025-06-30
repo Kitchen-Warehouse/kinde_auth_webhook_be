@@ -6,6 +6,7 @@ export default async (request: Request, context: any): Promise<Response> => {
 
     try {
         const payload = await request.text();
+        console.log("PAYLOAD", payload)
         const kindePayload: KindePayload = jwtDecode(payload);
 
         if (kindePayload?.type === "user.created") {
