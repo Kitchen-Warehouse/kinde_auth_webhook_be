@@ -24,7 +24,7 @@ export const createUserCt = async (kindePayload: KindePayload) => {
     const userExist = await isUserExist(adminClient, kindePayload?.data?.user?.email as string) as Customer;
     let kindeResponse;
     if (userExist && Object.keys(userExist).length > 0) {
-      const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields);
+      const ctPayload = prepareCTPayload(customerPayloadByKinde, userExist?.custom?.fields, userExist?.stores || [], isKwh);
 
       const updateActions: CustomerUpdateAction[] = [];
       kindeResponse = await updateKindePropertyValue({
@@ -38,11 +38,18 @@ export const createUserCt = async (kindePayload: KindePayload) => {
       const cleanSiteKey = Array.isArray(rawSiteKey)
         ? [...new Set(rawSiteKey.map(key => key?.trim())?.filter(key => key))]
         : [];
-      updateActions.push({
+
+        updateActions.push({
         action: "setCustomField",
         name: "siteKey",
-        value: cleanSiteKey ?? '',
+          value: cleanSiteKey ?? [],
       });
+
+      updateActions.push({
+        "action": "setStores",
+        "stores": ctPayload?.stores ?? [],
+      })
+
       adminClient.customers().withId({ ID: userExist?.id }).post({
         body: {
           version: userExist?.version,
@@ -54,7 +61,7 @@ export const createUserCt = async (kindePayload: KindePayload) => {
         body: { ct: userExist, kinde: kindeResponse },
       };
     } else {
-      const ctPayload = prepareCTPayload(customerPayloadByKinde, {});
+      const ctPayload = prepareCTPayload(customerPayloadByKinde, {}, [], isKwh);
 
       const customer = await adminClient.customers()
         .post({
