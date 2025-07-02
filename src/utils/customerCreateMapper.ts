@@ -19,11 +19,8 @@ export const prepareCTPayload = (customerData: AccountRegisterBody, customFields
     const uniqueStores = Array.from(
         new Map(storesDraft.map(store => [store.key, store])).values()
     );
-    console.log("CUSTOMER DATA", accountRegisterBody);
     const sitekeys = [...customFieldsData.siteKey ?? '', `${organizationName}|${currentSiteKey}`];
-    console.log("SITEKEYS", sitekeys)
     const uniqueSiteKeys = Array.from(new Set(sitekeys));
-    console.log("UNIQUE SITE KEYS", uniqueSiteKeys);
     const customer = {
         email: accountRegisterBody?.email,
         password: accountRegisterBody?.password,
